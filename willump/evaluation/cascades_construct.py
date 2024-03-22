@@ -23,6 +23,8 @@ def construct_cascades(model_data: Mapping,
                                                         predict_function=predict_function,
                                                         score_function=score_function,
                                                         feature_groups=feature_groups)
+    if 'feature_importances' in cascades_dict:
+        feature_importances = cascades_dict['feature_importances']
     pretty_print(feature_importances, feature_costs)
     total_feature_cost = sum(feature_costs.values())
     best_selected_feature_indices, selected_threshold, min_expected_cost = None, None, np.inf
@@ -38,7 +40,8 @@ def construct_cascades(model_data: Mapping,
                                                                                  selected_indices,
                                                                                  train_function, predict_function,
                                                                                  confidence_function, score_function,
-                                                                                 train_set_full_model)
+                                                                                 train_set_full_model,
+                                                                                 cascades_dict.get("score_threshold", 0.001))
             expected_cost = fraction_approximated * selected_feature_cost + \
                             (1 - fraction_approximated) * total_feature_cost
             print("Cutoff: %f Threshold: %f Expected Cost: %f" % (cost_cutoff, threshold, expected_cost))
@@ -48,7 +51,8 @@ def construct_cascades(model_data: Mapping,
                 min_expected_cost = expected_cost
     cascades_dict["selected_feature_indices"] = best_selected_feature_indices
     cascades_dict["cascade_threshold"] = selected_threshold
-    cascades_dict["full_model"] = train_function(y, X)
+    if "full_model" not in cascades_dict:
+        cascades_dict["full_model"] = train_function(y, X)
     cascades_dict["approximate_model"] = train_function(y, [X[i] for i in best_selected_feature_indices])
 
 
